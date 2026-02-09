@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import type { NextRequest, NextFetchEvent } from "next/server";
 
-export function proxy(request: NextRequest) {
+export function proxy(request: NextRequest, _event: NextFetchEvent) {
+  void _event; // required by NextProxy signature
   // 1. Generate unic nonce (number_used_once)
   const nonce = crypto.randomUUID();
 
@@ -18,7 +19,7 @@ export function proxy(request: NextRequest) {
         frame-ancestors 'none';
         upgrade-insecure-requests;
     `
-    // Remove all whitespace including newlines to create a valid single-line HTTP header
+    // Normalize all whitespace (including newlines) to single spaces for a valid single-line CSP header
     .replace(/\s+/g, " ")
     .trim();
 
