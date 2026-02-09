@@ -20,6 +20,8 @@ export function proxy(request: NextRequest) {
     `
     // Remove extra whitespace and trim leading/trailing spaces for better readability
     .replace(/\s{2,}/g, "")
+    // Remove all whitespace including newlines to create a valid single-line HTTP header
+    .replace(/\s+/g, " ")
     .trim();
 
   // 3. Add nonce request to headers (Next.js uses this)
@@ -44,6 +46,7 @@ export function proxy(request: NextRequest) {
   );
   response.headers.set(
     "Perissions-Policy",
+    "Permissions-Policy",
     "camera=(), microphone=(), geolocation=()",
   );
 
