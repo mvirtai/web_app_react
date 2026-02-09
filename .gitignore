@@ -64,9 +64,6 @@ coverage/
 
 # Development documentation (not for public repo)
 devlog.md
-SKILL.md
-docs/security-memos/
-docs/security-memos/00-memo-writing-guide.md
 .cursor/
 
 # Secrets and keys
