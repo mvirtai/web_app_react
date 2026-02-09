@@ -19,9 +19,7 @@ export function proxy(request: NextRequest, _event: NextFetchEvent) {
         frame-ancestors 'none';
         upgrade-insecure-requests;
     `
-    // Remove extra whitespace and trim leading/trailing spaces for better readability
-    .replace(/\s{2,}/g, "")
-    // Remove all whitespace including newlines to create a valid single-line HTTP header
+    // Normalize all whitespace (including newlines) to single spaces for a valid single-line CSP header
     .replace(/\s+/g, " ")
     .trim();
 
@@ -46,7 +44,6 @@ export function proxy(request: NextRequest, _event: NextFetchEvent) {
     "max-age=3156000; includeSubDomains",
   );
   response.headers.set(
-    "Perissions-Policy",
     "Permissions-Policy",
     "camera=(), microphone=(), geolocation=()",
   );
