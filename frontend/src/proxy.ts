@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import type { NextRequest, NextFetchEvent } from "next/server";
 
-export function proxy(request: NextRequest) {
+export function proxy(request: NextRequest, _event: NextFetchEvent) {
+  void _event; // required by NextProxy signature
   // 1. Generate unic nonce (number_used_once)
   const nonce = crypto.randomUUID();
 
