@@ -1,195 +1,304 @@
-# PR Story: Environment Variables and Project Documentation
+# PR Story: Initialize FastAPI Backend
 
-**Branch:** `chore/set-environment-variables-and-secrets`  
-**Date:** 2026-02-10  
-**Type:** Infrastructure & Documentation  
+**Branch:** `chore/initialize-fast-api-backend`  
+**Date:** 2026-02-11  
+**Type:** Backend Infrastructure  
 **Status:** Ready for Merge
 
 ---
 
 ## Executive Summary
 
-This PR establishes the foundational security and documentation infrastructure for the React CMS learning project. It introduces comprehensive project documentation (SKILL.md), security learning materials (security memos), environment variable validation with Zod, and necessary authentication dependencies.
+This PR initializes the FastAPI backend service with proper project structure, CORS configuration for the Next.js frontend, environment-based configuration management, and health monitoring endpoints. The backend is set up with modern Python tooling (uv, Ruff) and follows industry best practices for API development.
 
 **Key Changes:**
-- Project context and learning objectives documented
-- Security-first development approach defined
-- Type-safe environment variable validation implemented
-- NextAuth.js and Zod dependencies added
-- Security memo template and Server Components vulnerability guide created
+- FastAPI application with CORS middleware
+- Type-safe configuration management with Pydantic Settings
+- Health check endpoint for monitoring
+- Python project structure with pyproject.toml and uv package manager
+- Development scripts for running, testing, and linting
 
 ---
 
 ## What Changed
 
-### 1. Project Documentation (SKILL.md)
+### 1. FastAPI Application (`backend/src/main.py`)
 
-Created comprehensive project documentation covering:
+Created the main FastAPI application with:
 
-- **Learning objectives**: React 19 + Next.js 15, security-first development, professional workflows
-- **Technology stack**: Full-stack setup with React 19, Next.js 15, Python/FastAPI, PostgreSQL
-- **Security focus**: CVE awareness (CVE-2025-66478, CVE-2025-55184, etc.)
-- **Project structure**: Monorepo organization with frontend/backend separation
-- **Development phases**: Phased approach from security foundation to production deployment
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from src.config import settings
 
-**Impact:** Provides persistent context for development decisions and onboarding.
+app = FastAPI(
+    title="CMS API",
+    version="0.1.0"
+)
 
-### 2. Security Documentation
-
-Created two security memos in `docs/security-memos/`:
-
-#### 00-memo-writing-guide.md
-Internal template for consistent security documentation:
-- Educational-first approach
-- Code-heavy examples (vulnerable vs secure)
-- Practical checklists and testing strategies
-- Professional tone for portfolio work
-
-#### 01-server-components-vulnerabilities.md
-Comprehensive guide on React Server Components security:
-- **CVE-2025-66478** (CVSS 10.0) - RCE vulnerability analysis
-- Authorization vs authentication patterns
-- Server Actions security best practices
-- Input validation with Zod
-- Real-world vulnerable vs secure code examples
-- Testing and prevention strategies
-
-**Impact:** Learning resource for security-conscious development, demonstrates understanding of modern React security landscape.
-
-### 3. Environment Variable Validation
-
-Created `frontend/lib/env.ts` with Zod validation schema:
-
-```typescript
-const envSchema = z.object({
-  DATABASE_URL: z.string().min(1),
-  NEXTAUTH_URL: z.url({ protocol: /^https?$/ }),
-  NEXTAUTH_SECRET: z.string().min(32),
-  NEXT_PUBLIC_API_URL: z.url({ protocol: /^https?$/ }),
-});
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 ```
 
 **Features:**
-- Type-safe environment variable access
-- Runtime validation on application startup
-- Protocol validation (http/https only) for security
-- Minimum length validation for secrets
-- Clear error messages for missing/invalid variables
+- API metadata (title, version) for auto-generated documentation
+- CORS middleware configured for Next.js frontend communication
+- Configuration loaded from environment variables
+- Routes for root and health check endpoints
 
-**Security benefits:**
-- Prevents misconfiguration in production
-- Catches missing variables at startup (fail-fast)
-- Rejects non-HTTP(S) protocols (e.g., ftp://, file://)
-- Ensures NextAuth secret meets minimum security requirements
+**Endpoints:**
+- `GET /` - API root with welcome message
+- `GET /health` - Health check endpoint returning `{"status": "healthy"}`
+- `GET /docs` - Auto-generated Swagger UI documentation (FastAPI built-in)
+- `GET /redoc` - Alternative ReDoc documentation (FastAPI built-in)
 
-### 4. Dependencies Added
+### 2. Configuration Management (`backend/src/config.py`)
 
-#### Authentication & Validation
-- `next-auth@5.0.0-beta.26` - Authentication framework
-- `zod@4.3.6` - Schema validation
-- `@auth/prisma-adapter@^2.9.1` - Database adapter for NextAuth
+Implemented type-safe configuration with Pydantic Settings:
 
-**Rationale:**
-- NextAuth v5 (beta) for latest Next.js 15 compatibility
-- Zod v4 for modern schema validation with `z.url()` support
-- Prisma adapter for session persistence (security best practice)
+```python
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-### 5. .gitignore Updates
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False
+    )
+    
+    # Database
+    database_url: str = "file:./dev.db"
+    
+    # API
+    api_host: str = "0.0.0.0"
+    api_port: int = 8000
+    
+    # CORS
+    cors_origins: list[str] = ["http://localhost:3000"]
+    
+    # Security (required - no default)
+    secret_key: str
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
 
-#### Root .gitignore
-Fixed Python `lib/` pattern to avoid ignoring frontend source:
-```diff
-- lib/
-- lib64/
-+ /lib/
-+ /lib64/
-+ backend/lib/
-+ backend/lib64/
+settings = Settings()
 ```
 
-#### Frontend .gitignore
-Added environment file patterns:
-```gitignore
-.env
-.env.local
-.env.*.local
+**Benefits:**
+- Type-safe configuration with TypeScript-like type hints
+- Automatic validation at startup (fail-fast on misconfiguration)
+- Environment variable overrides with sensible defaults
+- Clear documentation of all configuration options
+- IDE autocomplete and type checking
+
+### 3. Python Project Configuration (`backend/pyproject.toml`)
+
+Set up modern Python project with uv package manager:
+
+```toml
+[project]
+name = "cms-backend"
+version = "0.1.0"
+description = "FastAPI backend for CMS"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "python-dotenv==1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.27.0",
+    "ruff>=0.7.0",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
 ```
 
-**Impact:** Prevents committing secrets while allowing `frontend/lib/` source code.
+**Dependencies explained:**
+- `fastapi[standard]` - FastAPI framework with standard extras (validation, etc.)
+- `uvicorn[standard]` - ASGI server with WebSocket and HTTP/2 support
+- `pydantic>=2.9.0` - Data validation and settings management
+- `pydantic-settings` - Environment variable configuration
+- `python-dotenv` - Load environment variables from .env files
+
+**Dev dependencies:**
+- `pytest` - Testing framework
+- `pytest-asyncio` - Async test support
+- `httpx` - HTTP client for testing API endpoints
+- `ruff` - Fast Python linter and formatter (replaces flake8, black, isort)
+
+### 4. Development Scripts (`backend/package.json`)
+
+Added npm-style scripts for consistency with frontend tooling:
+
+```json
+{
+  "name": "cms-backend",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "uvicorn src.main:app --reload --host 0.0.0.0 --port 8000",
+    "test": "pytest",
+    "lint": "ruff check .",
+    "format": "ruff format ."
+  }
+}
+```
+
+**Why package.json in Python project?**
+- Consistent interface across frontend/backend in monorepo
+- Enables `pnpm --filter cms-backend dev` from root
+- Familiar to full-stack developers
+- Works with monorepo tools (Turborepo, Nx, etc.)
+
+### 5. Environment Configuration
+
+Created `.env.example` template:
+
+```env
+DATABASE_URL="file:./dev.db"
+SECRET_KEY="<generate-with-openssl-rand-hex-32>"
+CORS_ORIGINS=["http://localhost:3000"]
+```
+
+**Note:** Actual `.env` file is gitignored and contains real secrets.
 
 ---
 
 ## Technical Decisions
 
-### Why Zod v4?
+### Why FastAPI?
 
-- Native `z.url()` primitive (not deprecated `z.string().url()`)
-- Protocol validation: `z.url({ protocol: /^https?$/ })`
-- Better error messages and TypeScript inference
-- Modern API for v4.x (latest stable)
+- **Modern Python framework** with async support
+- **Automatic API documentation** (Swagger/ReDoc) from code
+- **Type hints everywhere** - catches errors early, great IDE support
+- **Fast** - comparable to Node.js and Go performance
+- **Industry adoption** - used by Microsoft, Netflix, Uber
+- **Excellent for learning** - clear patterns, great documentation
 
-### Why NextAuth v5 Beta?
+### Why Pydantic Settings?
 
-- Best compatibility with Next.js 15 App Router
-- Modern Server Actions support
-- Improved TypeScript types
-- Production-ready despite beta label (widely adopted)
+- **Type safety** - configuration errors caught at startup
+- **Validation** - ensures correct types and formats
+- **IDE support** - autocomplete for configuration keys
+- **Environment hierarchy** - .env file + environment variables + defaults
+- **FastAPI native** - Pydantic is FastAPI's validation layer
 
-### Environment Variable Strategy
+### Why CORS Middleware?
 
-**Runtime validation over compile-time:**
-- Catches misconfiguration immediately on startup
-- Provides clear error messages for operations teams
-- Validates format (URLs, minimum lengths) not just presence
-- Exports typed `env` object for type-safe access throughout codebase
+Without CORS, browser blocks requests from Next.js (port 3000) to FastAPI (port 8000) due to Same-Origin Policy. The middleware tells browsers: "I trust requests from localhost:3000."
+
+**Production considerations:**
+- In development: Allow `http://localhost:3000`
+- In production: Allow only actual domain (e.g., `https://myapp.com`)
+- Never use `allow_origins=["*"]` in production
+
+### Why uv Package Manager?
+
+- **Fast** - 10-100x faster than pip
+- **Modern** - pyproject.toml native, no setup.py needed
+- **Reliable** - lockfile support (uv.lock) for reproducible builds
+- **Compatible** - works with existing pip/virtualenv workflows
 
 ---
 
-## Security Checklist
+## Security Considerations
 
-- [x] No secrets committed to Git
-- [x] Environment files in .gitignore
-- [x] Environment variables validated at runtime
-- [x] URL protocol validation (only http/https)
-- [x] Minimum secret length enforced (32 chars)
-- [x] Documentation references security CVEs
-- [x] Code examples show secure patterns
+### Configuration Secrets
+
+- ✅ `.env` file is gitignored
+- ✅ `.env.example` contains only placeholders
+- ✅ `secret_key` is required field (no default) - forces explicit configuration
+- ✅ No secrets committed to Git
+
+### CORS Configuration
+
+- ✅ Specific origins configured (not wildcard `*`)
+- ✅ Credentials allowed only for trusted origins
+- ✅ Production origins will be environment-specific
+
+### Future Security Tasks
+
+- [ ] Add rate limiting middleware
+- [ ] Implement API key authentication
+- [ ] Add request logging for audit trail
+- [ ] Set up HTTPS in production
+- [ ] Add security headers (HSTS, CSP, etc.)
 
 ---
 
 ## Testing Performed
 
-### Environment Validation
+### Manual Testing
+
 ```bash
-# Test missing variable
-unset NEXTAUTH_URL
-pnpm dev  # Should fail with clear Zod error
+# 1. Install dependencies
+cd backend
+uv sync
 
-# Test invalid URL
-NEXTAUTH_URL="ftp://example.com"
-pnpm dev  # Should fail (protocol validation)
+# 2. Activate virtual environment
+source .venv_backend/bin/activate
 
-# Test short secret
-NEXTAUTH_SECRET="short"
-pnpm dev  # Should fail (min 32 chars)
+# 3. Start development server
+uvicorn src.main:app --reload --port 8000
 
-# Test valid config
-# Uses .env.local with valid values
-pnpm dev  # Should start successfully
+# 4. Test endpoints
+curl http://localhost:8000/
+# Response: {"message":"Hello World!"}
+
+curl http://localhost:8000/health
+# Response: {"status":"healthy"}
+
+# 5. Check auto-generated documentation
+open http://localhost:8000/docs
+# Swagger UI loads successfully
+
+# 6. Test CORS (from Next.js frontend)
+# Navigate to http://localhost:3000
+# Frontend can successfully fetch from backend API
 ```
 
-### Dependency Installation
+### Configuration Validation
+
 ```bash
-# Clean install
-rm -rf node_modules pnpm-lock.yaml
-pnpm install  # Should complete without errors
+# Test missing required secret_key
+rm backend/.env
+cd backend && uvicorn src.main:app
+# Should fail: ValidationError for secret_key
+
+# Test with valid configuration
+# Create .env with SECRET_KEY
+cd backend && uvicorn src.main:app
+# Should start successfully
 ```
 
-### Linting & Type Checking
+### Code Quality
+
 ```bash
-cd frontend
-pnpm lint      # No errors
-pnpm type-check # No TypeScript errors
+cd backend
+
+# Run linter
+ruff check .
+# No errors
+
+# Run formatter (check only)
+ruff format --check .
+# No formatting issues
 ```
 
 ---
@@ -197,19 +306,18 @@ pnpm type-check # No TypeScript errors
 ## Files Changed
 
 ```
-.gitignore                                         |    4 +-
-SKILL.md                                           |  479 +++
-docs/security-memos/00-memo-writing-guide.md       |  515 +++
-docs/security-memos/01-server-components-vulnerabilities.md | 643 +++
-frontend/.gitignore                                |    5 +
-frontend/lib/env.ts                                |   15 +
-frontend/package.json                              |    4 +-
-frontend/pnpm-lock.yaml                            | 4186 ++++++++
-package.json                                       |    3 +-
-pnpm-lock.yaml                                     |  123 +
+backend/.env.example                |   3 +
+backend/package.json                |  10 +
+backend/pyproject.toml              |  27 ++
+backend/src/__init__.py             |   0
+backend/src/config.py               |  25 ++
+backend/src/main.py                 |  24 ++
+pyproject.toml                      |   5 +
+uv.lock                             | 1055 ++++++++++++++++
+9 files changed, 1149 insertions(+)
 ```
 
-**Total:** 10 files changed, 5977 insertions(+), 2 deletions(-)
+**Total:** 9 files changed, 1149 insertions(+)
 
 ---
 
@@ -217,98 +325,125 @@ pnpm-lock.yaml                                     |  123 +
 
 ### For Other Developers
 
-1. **Copy environment template:**
+1. **Install uv (if not already installed):**
    ```bash
-   cp frontend/.env.example frontend/.env.local  # (if .env.example exists)
-   # Or manually create .env.local with required variables
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
-2. **Set environment variables:**
+2. **Install backend dependencies:**
    ```bash
-   # Required variables (see frontend/lib/env.ts)
-   DATABASE_URL="file:./data/dev.db"
-   NEXTAUTH_URL="http://localhost:3000"
-   NEXTAUTH_SECRET="<generate-with-openssl-rand-base64-32>"
-   NEXT_PUBLIC_API_URL="http://localhost:8000"
+   cd backend
+   uv sync
    ```
 
-3. **Generate NextAuth secret:**
+3. **Create environment file:**
    ```bash
-   openssl rand -base64 32
+   cp .env.example .env
+   # Edit .env and set SECRET_KEY
    ```
 
-4. **Install dependencies:**
+4. **Generate secret key:**
    ```bash
-   pnpm install
+   openssl rand -hex 32
+   # Copy output to SECRET_KEY in .env
    ```
 
-5. **Verify setup:**
+5. **Start development server:**
    ```bash
-   cd frontend
-   pnpm dev  # Should start without errors
+   source .venv_backend/bin/activate
+   uvicorn src.main:app --reload --port 8000
+   # Or use npm script: pnpm --filter cms-backend dev
    ```
 
-### For CI/CD
+6. **Verify setup:**
+   ```bash
+   curl http://localhost:8000/health
+   # Should return: {"status":"healthy"}
+   ```
 
-Environment variables must be set in GitHub Secrets:
-- `NEXTAUTH_URL` - Production URL (https://yourdomain.com)
-- `NEXTAUTH_SECRET` - Strong random secret (32+ chars)
-- `DATABASE_URL` - Production database connection string
-- `NEXT_PUBLIC_API_URL` - Production API endpoint
+### Virtual Environment
+
+uv creates `.venv_backend/` in the backend directory. Two ways to use it:
+
+**Option 1: Activate (traditional)**
+```bash
+source backend/.venv_backend/bin/activate
+uvicorn src.main:app --reload
+```
+
+**Option 2: Use uv (modern)**
+```bash
+cd backend
+uv run uvicorn src.main:app --reload
+```
 
 ---
 
 ## What's Next
 
-This PR sets up the foundation. Next steps:
+This PR establishes the backend foundation. Next steps:
 
-1. **Implement NextAuth configuration** (`lib/auth.ts`)
-2. **Set up Prisma schema** for user/session tables
-3. **Create authentication pages** (login, register)
-4. **Add authorization helpers** for Server Actions
-5. **Implement rate limiting** for auth endpoints
+1. **Add database migrations** (Prisma or Alembic)
+2. **Implement authentication** (JWT tokens, session management)
+3. **Create API endpoints** for CMS functionality (users, content, etc.)
+4. **Add request validation** with Pydantic models
+5. **Write tests** (pytest with coverage)
+6. **Add API versioning** (/api/v1/)
+7. **Implement logging** (structured JSON logs)
 
 ---
 
 ## Related Issues
 
-- Implements environment variable setup from Phase 1 project plan
-- Addresses CVE-2025-66478 awareness (documented in security memo)
-- Prepares for NextAuth.js integration (dependencies added)
+- Implements Ticket 5 from Phase 1 project plan
+- Sets up FastAPI backend infrastructure
+- Enables frontend-backend communication via CORS
+- Prepares for Prisma ORM integration (next ticket)
 
 ---
 
-## Review Notes
+## Review Checklist
 
-### What to Check
-
-- [ ] SKILL.md accurately reflects project goals and tech stack
-- [ ] Security memo content is technically accurate
-- [ ] Environment validation schema matches .env.local requirements
-- [ ] .gitignore patterns correctly exclude Python lib/ but not frontend/lib/
-- [ ] No sensitive information committed (secrets, API keys, etc.)
-- [ ] Dependencies are appropriate versions (NextAuth v5 beta, Zod v4)
-
-### Questions for Reviewer
-
-None - this is a straightforward infrastructure/documentation PR. All changes are non-breaking and additive.
+- [ ] FastAPI application starts without errors
+- [ ] Health check endpoint responds correctly
+- [ ] Auto-generated docs accessible at /docs
+- [ ] CORS configured for localhost:3000
+- [ ] Configuration loads from .env file
+- [ ] No secrets committed to Git
+- [ ] .env.example contains placeholders only
+- [ ] pyproject.toml dependencies are correct
+- [ ] Code passes ruff linting
+- [ ] Virtual environment setup works
 
 ---
 
 ## Deployment Impact
 
-**None.** This PR only adds:
-- Documentation files
-- Type definitions
-- Dependencies
-- Environment validation (runs at startup)
+**Development only.** This PR introduces the backend service but doesn't affect the frontend or existing infrastructure.
 
-No runtime behavior changes to existing code. Application will fail fast if environment is misconfigured (desirable for operations).
+**Future deployment considerations:**
+- Backend will run as separate service (Docker container)
+- Needs environment variables configured in deployment platform
+- Should run behind reverse proxy (nginx/Caddy) for HTTPS
+- Health check endpoint enables container orchestration (Kubernetes/Docker Compose)
+
+---
+
+## Learning Outcomes
+
+This PR provided hands-on experience with:
+
+1. **FastAPI fundamentals** - Routes, middleware, app configuration
+2. **API design** - Health checks, versioning, documentation
+3. **CORS concepts** - Same-Origin Policy, cross-origin requests
+4. **Configuration management** - Environment variables, type-safe settings
+5. **Python packaging** - pyproject.toml, modern tooling (uv, Ruff)
+6. **Project structure** - Professional backend organization
 
 ---
 
 ## Conclusion
 
-This PR establishes the security-first foundation for the React CMS project. It documents learning objectives, provides security resources, adds necessary authentication dependencies, and implements type-safe environment variable validation. All changes support the goal of building a professional, secure, portfolio-quality application.
+This PR initializes a production-ready FastAPI backend with proper structure, configuration management, and CORS support. The implementation follows industry best practices, uses modern Python tooling, and provides a solid foundation for building the CMS API.
 
-**Ready to merge:** All changes are tested, documented, and follow project conventions.
+**Ready to merge:** Backend service is functional, tested, and properly configured.

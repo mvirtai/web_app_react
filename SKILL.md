@@ -472,6 +472,35 @@ You will:
 - **Human-written appearance** - No AI slop, no generated comments
 - **Iterative approach** - Build, learn, refactor, improve
 
+## Markdown Formatting Standards
+
+When creating or editing Markdown files (`.md`), follow these rules to pass markdownlint:
+
+- **Blank lines around headings:** Always add a blank line before AND after headings (except at start/end of file)
+- **Blank lines around lists:** Always add a blank line before a list starts
+- **Blank lines around code blocks:** Always add a blank line before and after fenced code blocks
+- **Example violations:**
+
+  ```markdown
+  ## Heading
+  - List item    ❌ Missing blank line after heading
+  
+  Text here.
+  - List item    ❌ Missing blank line before list
+  ```
+
+- **Correct format:**
+
+  ```markdown
+  ## Heading
+  
+  - List item    ✅ Blank line after heading
+  
+  Text here.
+  
+  - List item    ✅ Blank line before list
+  ```
+
 ---
 
 **Version:** 1.0.0  
