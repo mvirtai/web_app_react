@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "pnpm --parallel -r dev",
     "build": "pnpm -r build",
-    "lint": "pnpm -r lint",
+    "lint": "pnpm -r lint && pnpm lint:backend",
+    "lint:backend": "cd backend && uv run ruff check .",
     "type-check": "pnpm -r type-check",
-    "test": "pnpm -r test",
+    "test": "pnpm -r test && pnpm test:backend",
+    "test:backend": "cd backend && uv run pytest",
     "clean": "pnpm -r clean && rm -rf node_modules"
   },
   "devDependencies": {
