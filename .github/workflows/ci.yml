@@ -65,5 +65,11 @@ jobs:
       - name: Lint with Ruff
         run: cd backend && uv run ruff check .
 
-      - name: Run tests
-        run: cd backend && uv run pytest
+      - name: Run tests (if present)
+        run: |
+          cd backend
+          if ls tests/test_*.py 1> /dev/null 2>&1; then
+            uv run pytest
+          else
+            echo "No backend tests found, skipping pytest."
+          fi
