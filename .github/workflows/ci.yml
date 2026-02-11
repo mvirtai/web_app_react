@@ -60,7 +60,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: cd backend && uv sync
+        run: cd backend && uv sync --all-extras
 
       - name: Lint with Ruff
         run: cd backend && uv run ruff check .
