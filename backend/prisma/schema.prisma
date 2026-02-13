@@ -21,6 +21,7 @@ model User {
     sessions Session[]
 }
 
+
 enum Role {
     ADMIN
     EDITOR
@@ -57,7 +58,7 @@ model Post {
     publishedAt DateTime?
     deletedAt   DateTime?
 
-    author     User       @relation(fields: [authorId], references: [id])
+    author     User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
     categories Category[]
     tags       Tag[]
 }
