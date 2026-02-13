@@ -501,8 +501,92 @@ When creating or editing Markdown files (`.md`), follow these rules to pass mark
   - List item    ✅ Blank line before list
   ```
 
+## Python Code Standards (Ruff)
+
+When writing Python code, follow these standards enforced by **Ruff** linter:
+
+### Import Organization (I001)
+
+**Rule:** `I001/unsorted-imports` — Imports must be organized and sorted correctly.
+
+**Pattern:**
+1. Standard library imports (e.g. `os`, `sys`, `importlib`)
+2. Third-party imports (e.g. `pytest`, `pydantic`)
+3. Local imports (e.g. `import src.config`)
+
+Each group separated by a blank line.
+
+**❌ Bad:**
+```python
+import os
+from pydantic import ValidationError
+import pytest
+```
+
+**✅ Good:**
+```python
+import importlib
+import os
+
+import pytest
+```
+
+### Unused Imports (F401)
+
+**Rule:** `F401/unused-import` — Remove all unused imports.
+
+**❌ Bad:**
+```python
+from pydantic import ValidationError  # Never used
+import pytest
+```
+
+**✅ Good:**
+```python
+import pytest
+```
+
+### Whitespace on Blank Lines (W293)
+
+**Rule:** `W293/blank-line-with-whitespace` — Blank lines must be completely empty (no spaces/tabs).
+
+**❌ Bad:**
+```python
+def function():
+    x = 1
+    
+    return x  # Blank line has trailing spaces
+```
+
+**✅ Good:**
+```python
+def function():
+    x = 1
+
+    return x  # Blank line is truly empty
+```
+
+**Tip:** In most editors, enable "trim trailing whitespace" in settings to prevent this automatically.
+
+### Running Ruff
+
+```bash
+# Check all files
+cd backend
+uv run ruff check .
+
+# Check specific file
+uv run ruff check tests/test_config.py
+
+# Auto-fix issues
+uv run ruff check . --fix
+
+# Format code (like black)
+uv run ruff format .
+```
+
 ---
 
-**Version:** 1.0.0  
-**Last Updated:** 2026-02-08  
+**Version:** 1.0.1  
+**Last Updated:** 2026-02-13  
 **Status:** Active Learning Project
