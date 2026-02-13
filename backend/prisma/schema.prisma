@@ -1,0 +1,80 @@
+generator client {
+    provider = "prisma-client"
+    output   = "../../node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "sqlite"
+}
+
+// models
+model User {
+    id           String   @id @default(cuid())
+    email        String   @unique
+    name         String?
+    passwordHash String
+    role         Role     @default(VIEWER)
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+
+    posts    Post[]
+    sessions Session[]
+}
+
+
+enum Role {
+    ADMIN
+    EDITOR
+    SECURITY_MONITOR
+    VIEWER
+}
+
+model Session {
+    id           String   @id @default(cuid())
+    userId       String
+    expires      DateTime
+    sessionToken String   @unique
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum Status {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+}
+
+model Post {
+    id          String    @id @default(cuid())
+    title       String
+    content     String
+    excerpt     String?
+    status      Status    @default(DRAFT)
+    authorId    String
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    publishedAt DateTime?
+    deletedAt   DateTime?
+
+    author     User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+    categories Category[]
+    tags       Tag[]
+}
+
+model Category {
+    id        String    @id @default(cuid())
+    name      String    @unique
+    slug      String    @unique
+    deletedAt DateTime?
+    posts     Post[]
+}
+
+model Tag {
+    id        String    @id @default(cuid())
+    name      String   @unique
+    slug      String    @unique
+    deletedAt DateTime?
+    posts     Post[]
+}
