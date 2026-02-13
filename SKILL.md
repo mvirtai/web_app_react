@@ -477,7 +477,7 @@ You will:
 When creating or editing Markdown files (`.md`), follow these rules to pass markdownlint:
 
 - **Blank lines around headings:** Always add a blank line before AND after headings (except at start/end of file)
-- **Blank lines around lists:** Always add a blank line before a list starts
+- **Blank lines around lists (MD032):** Always add a blank line before and after a list. Rule: `MD032/blanks-around-lists` — lists should be surrounded by blank lines.
 - **Blank lines around code blocks:** Always add a blank line before and after fenced code blocks
 - **Example violations:**
 
